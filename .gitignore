@@ -7,3 +7,6 @@
 .venv/
 __pycache__/
 .ipynb_checkpoints/
+
+# Prebuilt Qdrant snapshot. The notebook downloads this locally when missing.
+Agentic_RAG/qdrant_data/
