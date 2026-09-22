@@ -22,7 +22,7 @@ On GitHub, open the `.ipynb` file. The rendered page is the notebook.
 
 Use the **Open in Colab** badge at the top of the file you are reading. Each badge opens that file.
 
-- `001` opens its own Colab gist.
+- `001` opens `001-agentic-router.ipynb` from this repo.
 - `002` opens `002-agentic-router-with-jev.ipynb` from this repo.
 
 The badge in `002` used to point at the `001` gist. If Colab shows the title **Deep Dive Agentic Retrieval Augmented Generation**, you are in `001`. The Jev notebook title is **Agentic RAG with TypeSafe Jev**.
