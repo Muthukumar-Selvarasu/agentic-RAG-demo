@@ -5,7 +5,7 @@ Two notebooks, same retrieval pipeline, different router.
 | Notebook | What it is | Who picks the route |
 | --- | --- | --- |
 | [`001-agentic-router.ipynb`](001-agentic-router.ipynb) | Deep Dive Agentic Retrieval Augmented Generation | An OpenAI chat prompt. The model returns JSON with `action` and `reason`. |
-| [`002-agentic-router-with-jev.ipynb`](002-agentic-router-with-jev.ipynb) | Agentic RAG with TypeSafe Jev | Jev (TypeSafe) via `TYPESAFE_API_KEY`. A typed Choice, no router prompt. OpenAI is used only to write the answer after retrieval. |
+| [`002-agentic-router-with-jev.ipynb`](002-agentic-router-with-jev.ipynb) | Agentic RAG with TypeSafe Jev | Jev (TypeSafe) via `TYPESAFE_API_KEY`. A typed Choice, no router prompt. OpenAI writes the answer after retrieval. For a compound question it also splits the query and writes the combined answer. Jev still picks each route. |
 
 Both send the chosen route to the same three tools:
 
@@ -54,7 +54,7 @@ cp .env.example .env
 
 | Variable | `001` | `002` |
 | --- | --- | --- |
-| `OPENAI_API_KEY` | Router and RAG answers | RAG answers only |
+| `OPENAI_API_KEY` | Router and RAG answers | RAG answers. Also splits a compound question and writes the combined answer. |
 | `SERPAPI_KEY` | `INTERNET_QUERY`. `SERP_API_KEY` also works. | Same |
 | `TYPESAFE_API_KEY` | Not used | `route_query` |
 
@@ -95,6 +95,8 @@ Decision made by TypeSafe (Jev): 10K_DOCUMENT_QUERY (confidence 1.00, probabilit
 ```
 
 The answer text after that line still comes from OpenAI for the Qdrant routes, and from SerpApi snippets for `INTERNET_QUERY`.
+
+`agentic_rag_multi()` in either notebook splits a compound question, routes each part on its own, and returns one answer with the citations kept. In `002`, each of those routes is still a Jev decision. The Part 1 test cell and the bonus self-check at the bottom of each notebook are the cells that print those results.
 
 ## Versions
 
