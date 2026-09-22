@@ -1,23 +1,31 @@
 # Agentic RAG demo
 
-Local runtime for [`001-agentic-router.ipynb`](001-agentic-router.ipynb). Open the notebook in Cursor, select the `.venv` kernel, and run cells.
+Two notebooks, same retrieval pipeline, different router.
 
-## Chosen versions
-
-| Piece | Version | Why |
+| Notebook | What it is | Who picks the route |
 | --- | --- | --- |
-| Python | **3.13** | Already on this machine (`/opt/homebrew/bin/python3.13`). Compatible with the notebook's Hugging Face pin. Do not use the default `python3` (3.14) — `transformers==4.48.0` and matching PyTorch wheels target 3.13 and earlier. |
-| transformers | **4.48.0** | Pinned in the notebook install cell. Required by `nomic-ai/nomic-embed-text-v1.5`. |
-| torch | **2.6.0** | First PyTorch line that ships Python 3.13 wheels and satisfies transformers 4.48 (`torch>=2`). |
-| openai | **1.59.9** | Notebook uses the current `OpenAI()` client (`from openai import OpenAI`). |
-| qdrant-client | **1.13.3** | Local on-disk client (`AsyncQdrantClient(path=...)`) used for the 10-K and OpenAI-docs collections. |
-| python-dotenv | **1.0.1** | Loads `.env` when the notebook is not running on Colab. |
-| nest-asyncio | **1.6.0** | Lets the notebook run Qdrant's async client inside Jupyter. |
-| ipykernel | **6.29.5** | Cursor / VS Code notebook kernel. |
-| matplotlib | **3.10.0** | Imported by the notebook. |
-| einops | **0.8.0** | Required by the Nomic embedding model (`trust_remote_code=True`). |
+| [`001-agentic-router.ipynb`](001-agentic-router.ipynb) | Deep Dive Agentic Retrieval Augmented Generation | An OpenAI chat prompt. The model returns JSON with `action` and `reason`. |
+| [`002-agentic-router-with-jev.ipynb`](002-agentic-router-with-jev.ipynb) | Agentic RAG with TypeSafe Jev | Jev (TypeSafe) via `TYPESAFE_API_KEY`. A typed Choice, no router prompt. OpenAI is used only to write the answer after retrieval. |
 
-Embedding model (downloaded on first retrieve cell): `nomic-ai/nomic-embed-text-v1.5`.
+Both send the chosen route to the same three tools:
+
+- `OPENAI_QUERY` — Qdrant collection `opnai_data`
+- `10K_DOCUMENT_QUERY` — Qdrant collection `10k_data` (Uber 2021 and Lyft 2024 10-K filings)
+- `INTERNET_QUERY` — live Google search through SerpApi
+
+## Read them
+
+On GitHub, open the `.ipynb` file. The rendered page is the notebook.
+
+- [001 on GitHub](https://github.com/Muthukumar-Selvarasu/agentic-RAG-demo/blob/main/001-agentic-router.ipynb)
+- [002 on GitHub](https://github.com/Muthukumar-Selvarasu/agentic-RAG-demo/blob/main/002-agentic-router-with-jev.ipynb)
+
+Use the **Open in Colab** badge at the top of the file you are reading. Each badge opens that file.
+
+- `001` opens its own Colab gist.
+- `002` opens `002-agentic-router-with-jev.ipynb` from this repo.
+
+The badge in `002` used to point at the `001` gist. If Colab shows the title **Deep Dive Agentic Retrieval Augmented Generation**, you are in `001`. The Jev notebook title is **Agentic RAG with TypeSafe Jev**.
 
 ## Setup
 
@@ -34,40 +42,74 @@ pip install \
   nest-asyncio==1.6.0 \
   ipykernel==6.29.5 \
   matplotlib==3.10.0 \
-  einops==0.8.0
+  einops==0.8.0 \
+  typesafe-sdk
 ```
 
-Copy secrets and fill them in:
+`typesafe-sdk` is only required for `002`. It needs Python 3.10 or newer. The notebook install cell also installs it.
 
 ```bash
 cp .env.example .env
 ```
 
-| Variable | Used by |
-| --- | --- |
-| `OPENAI_API_KEY` | Router + RAG generation |
-| `SERPAPI_KEY` | Live Google search (`INTERNET_QUERY`). `SERP_API_KEY` also works. |
-| `TYPESAFE_API_KEY` | TypeSafe / Jev. Not read by this notebook yet. |
+| Variable | `001` | `002` |
+| --- | --- | --- |
+| `OPENAI_API_KEY` | Router and RAG answers | RAG answers only |
+| `SERPAPI_KEY` | `INTERNET_QUERY`. `SERP_API_KEY` also works. | Same |
+| `TYPESAFE_API_KEY` | Not used | `route_query` |
 
-## Run from Cursor
+## Test locally in Cursor
 
-1. Open `001-agentic-router.ipynb`.
+1. Open the notebook you want to test.
 2. Kernel picker (top right) → **Select Another Kernel** → **Jupyter Kernel** → **Python 3.13 (agentic-RAG)**  
    (or **Python Environments** → `.venv`).
-3. Re-run cells top to bottom.
+3. Run the cells from the top through the Qdrant client cell. On a machine without `Agentic_RAG/qdrant_data`, that download cell fetches `10k_data` and `opnai_data`. The folder is gitignored. Colab clones the course repo instead.
+4. Run one query for each route.
 
 Do not keep the default **Python 3.9** kernel. That is macOS system Python. It has no `python-dotenv`, and it is what produced `No module named 'dotenv'` plus the LibreSSL warning.
 
-`google.colab` is only on [Google Colab](https://colab.research.google.com/github/). Locally that import is supposed to fail; the next line loads `.env` instead.
+`google.colab` exists only on Colab. Locally that import fails on purpose, and the next lines load `.env`.
 
-The first install cell now also installs `python-dotenv`, `nest-asyncio`, and `einops` so Colab and Cursor both work. If the 3.13 kernel is already selected, you can skip that cell.
+If the 3.13 kernel is already selected, you can skip the pip install cell.
 
-## Qdrant data
+### Queries
 
-OpenAI-docs and 10-K routes need the prebuilt store at `Agentic_RAG/qdrant_data`. On Colab the notebook clones [hamzafarooq/multi-agent-course](https://github.com/hamzafarooq/multi-agent-course). Locally that clone is skipped, so copy the snapshot next to this notebook before those cells:
+Run `agentic_rag(...)` in whichever notebook is open.
+
+| Query | Expected route |
+| --- | --- |
+| `agentic_rag("what was uber revenue in 2021?")` | `10K_DOCUMENT_QUERY` |
+| `agentic_rag("how to work with chat completions?")` | `OPENAI_QUERY` |
+| `agentic_rag("List me down new LLMs in 2025")` | `INTERNET_QUERY` |
+
+Internet queries do not need the Qdrant folder. The other two do. `Collection 10k_data not found` means the client was opened before the snapshot existed. Re-run the Qdrant client cell, then run the query again.
+
+### What you should see
+
+In `001`, the router cell calls the OpenAI client and returns `action` plus a short `reason`.
+
+In `002`, the router cell prints a line like this before the answer:
 
 ```text
-Agentic_RAG/qdrant_data
+Decision made by TypeSafe (Jev): 10K_DOCUMENT_QUERY (confidence 1.00, probability 1.00)
 ```
 
-Internet / SerpApi queries do not need that folder.
+The answer text after that line still comes from OpenAI for the Qdrant routes, and from SerpApi snippets for `INTERNET_QUERY`.
+
+## Versions
+
+| Piece | Version | Why |
+| --- | --- | --- |
+| Python | **3.13** | Compatible with the notebook's Hugging Face pin. Do not use the default `python3` (3.14) — `transformers==4.48.0` and matching PyTorch wheels target 3.13 and earlier. |
+| transformers | **4.48.0** | Pinned in the notebook install cell. Required by `nomic-ai/nomic-embed-text-v1.5`. |
+| torch | **2.6.0** | First PyTorch line that ships Python 3.13 wheels and satisfies transformers 4.48 (`torch>=2`). |
+| openai | **1.59.9** | Notebooks use `from openai import OpenAI`. |
+| qdrant-client | **1.13.3** | Local on-disk client (`AsyncQdrantClient(path=...)`). |
+| typesafe-sdk | **0.7.x** | `002` only. `TypeSafeClient` reads `TYPESAFE_API_KEY`. |
+| python-dotenv | **1.0.1** | Loads `.env` outside Colab. |
+| nest-asyncio | **1.6.0** | Lets the notebook run Qdrant's async client inside Jupyter. |
+| ipykernel | **6.29.5** | Cursor / VS Code notebook kernel. |
+| matplotlib | **3.10.0** | Imported by the notebooks. |
+| einops | **0.8.0** | Required by the Nomic embedding model (`trust_remote_code=True`). |
+
+Embedding model, downloaded on the first retrieve cell: `nomic-ai/nomic-embed-text-v1.5`.
