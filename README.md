@@ -63,7 +63,7 @@ cp .env.example .env
 1. Open the notebook you want to test.
 2. Kernel picker (top right) → **Select Another Kernel** → **Jupyter Kernel** → **Python 3.13 (agentic-RAG)**  
    (or **Python Environments** → `.venv`).
-3. Run the cells from the top through the Qdrant client cell. On a machine without `Agentic_RAG/qdrant_data`, that download cell fetches `10k_data` and `opnai_data`. The folder is gitignored. Colab clones the course repo instead.
+3. Run the cells from the top through the Qdrant client cell. On a machine without `Agentic_RAG/qdrant_data`, that download cell fetches `10k_data` and `opnai_data`. The folder is gitignored. Colab downloads the same snapshot into `/content/Agentic_RAG/qdrant_data`. The collection is not in this GitHub repo, so a Colab run that skips the download cell opens an empty database and returns `Collection 10k_data not found`.
 4. Run one query for each route.
 
 Do not keep the default **Python 3.9** kernel. That is macOS system Python. It has no `python-dotenv`, and it is what produced `No module named 'dotenv'` plus the LibreSSL warning.
