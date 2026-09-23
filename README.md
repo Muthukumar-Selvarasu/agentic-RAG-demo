@@ -13,6 +13,38 @@ Both send the chosen route to the same three tools:
 - `10K_DOCUMENT_QUERY` — Qdrant collection `10k_data` (Uber 2021 and Lyft 2024 10-K filings)
 - `INTERNET_QUERY` — live Google search through SerpApi
 
+## Assignment
+
+Both notebooks carry the same Notebook Assignment. The router is the only difference: `001` uses an OpenAI chat prompt, `002` uses Jev. The work below sits on top of that router.
+
+### Part 1 — Sub-query division (required)
+
+This is the graded piece.
+
+`agentic_rag()` treats a compound question as one search. The router picks one source, so *"What was Uber's revenue in 2021 and what was Lyft's in 2024?"* comes back partial or mixed. That is the failure this part exists to fix. `agentic_rag_multi()` splits the question, routes each part on its own (the parts can land on different sources), and writes one answer that keeps the citations from every part.
+
+A single question still uses one route, with no extra synthesis call. The splitter returns a string that may be wrapped in prose or a code fence. A parse failure falls back to the original query so a bad split cannot crash the agent.
+
+Run the **Part 1 tests** cell. It prints the split, the route, and the combined answer for:
+
+| Query | Expected |
+| --- | --- |
+| `what was uber revenue in 2021?` | 1 sub-query, 1 route, same as `agentic_rag()` |
+| `what was lyft revenue in 2021 and what was uber revenue in 2021` | 2 sub-queries, both `10K_DOCUMENT_QUERY` |
+| `what was uber's 2021 revenue and what are the newest LLMs?` | 2 sub-queries, different routes |
+
+**Deliverable:** the notebook, run end to end, with Part 1 filled in.
+
+### Bonus — RBAC-aware semantic cache (optional)
+
+Section 6 already stops a role from reaching a source it is not allowed to use. A semantic cache keyed only on the question walks around that gate. After `bob` (finance analyst) asks about Uber revenue, `alice` (engineer) can ask the same thing, hit the cache, and receive finance data the gate was meant to withhold. The cache then becomes the leak.
+
+`RoleAwareSemanticCache` keeps a separate store per role. A lookup searches only the caller's role, so another role's answer is unreachable. Unknown users and disallowed routes are denied before any cache read. Denials are not stored. Time-sensitive questions (a stock price, "right now", "latest") are not stored, because a fast stale answer is still a wrong answer.
+
+The bonus is ungraded in this notebook. It is the warm-up for **ARGUS**, the module assignment that requires a real caching layer and a cost comparison with and without the cache. Building it here means ARGUS extends a cache you already understand.
+
+Run the **Bonus self-check** cell (`run_self_check()`). Include the bonus in the same notebook when that check passes.
+
 ## Read them
 
 On GitHub, open the `.ipynb` file. The rendered page is the notebook.
